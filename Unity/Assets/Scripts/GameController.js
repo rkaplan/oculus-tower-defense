@@ -43,7 +43,7 @@ function Update () {
 checkLookingAt = function(){
   for (var i : float = 0; i < 10; i++){
     // shoot out a ray from both the left and right eye at this y value in the viewport
-    var cameras : Component[]   = currentTower.camera.GetComponentsInChildren(Camera);
+    var cameras : Component[]   = currentTower.camera.gameObject.GetComponentsInChildren(Camera);
     var cameraLeft : Camera     = cameras[0];
     var cameraRight : Camera    = cameras[1];
     var ray : Ray            = cameraLeft.ViewportPointToRay(Vector3(0.5, i / 10,0));
@@ -96,18 +96,25 @@ checkInput = function(){
 };
 
 switchToTower = function (tower : Tower){
+  var rotationDifference : Quaternion;
+  if (currentTower){
+    rotationDifference  = currentTower.camera.gameObject.transform.rotation *
+                                        Quaternion.Inverse(currentTower.getCameraRotationOffset());
+  } else {
+    rotationDifference = Quaternion.identity;
+  }
+
   // switch to this tower's camera
   currentTower = tower;
-  switchToCamera(tower.camera, tower.getCameraRotationOffset(), tower.TowerObject);
+  switchToCamera(tower.camera, tower.getCameraRotationOffset() * rotationDifference, tower.TowerObject);
 };
 
-switchToCamera = function (camera : OVRCameraController, initOffset : Quaternion, towerObject : GameObject){
+switchToCamera = function (camera : OVRCameraController, rotation : Quaternion, towerObject : GameObject){
   // Enable both cameras
   toggleCameras(camera, true);
   // set this camera's rotation such that it won't fuck up the kinect
 
-  camera.transform.rotation = initOffset;
-  camera.transform.RotateAround(towerObject.transform.position, Vector3.up, currentRotation);
+  camera.gameObject.transform.rotation = rotation;
   // disable the other camera's
   for (var i = 0; i < towers.length; i++){
     var currCamera : OVRCameraController = towers[i].camera;
@@ -118,11 +125,11 @@ switchToCamera = function (camera : OVRCameraController, initOffset : Quaternion
   }
 };
 
-// saves the initial y rotation of each of the tower's cameras for use later
+// saves the initial rotation Quaternion of each of the tower's cameras for use later
 setupCameraRotations = function(){
   for (var i : int = 0; i < towers.length; i++){
     var currTower : Tower = towers[i];
-    currTower.setCameraRotationOffset(currTower.camera.transform.rotation);
+    currTower.setCameraRotationOffset(currTower.camera.gameObject.transform.rotation);
   }
 };
 
