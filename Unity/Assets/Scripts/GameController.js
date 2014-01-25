@@ -43,8 +43,7 @@ function Update () {
 }
 
 fireLaser = function(dir : Vector3, left : boolean){
-  var origin = currentTower.TowerObject.gameObject.transform.position;
-  origin.y *= 2;
+  var origin = currentTower.camera.gameObject.transform.position;
   Debug.Log("Firing from " + origin);
   if (left){
     origin.x -= .5;
@@ -55,6 +54,7 @@ fireLaser = function(dir : Vector3, left : boolean){
   var line : LineRenderer = laser.GetComponent(LineRenderer);
   line.SetVertexCount(2);
   line.SetPosition(1, dir * 200);
+  line.SetPosition(0, dir * -100);
 };
 
 checkLookingAt = function(){
