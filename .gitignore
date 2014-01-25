@@ -13,3 +13,5 @@
 *.a
 
 Unity/Temp/
+Unity/Library/
+Unity/ProjectSettngs/
