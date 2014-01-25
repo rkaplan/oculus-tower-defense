@@ -1,7 +1,7 @@
 ﻿#pragma strict
 class Tower{
   var TowerObject  : GameObject;
-  var camera : Camera;
+  var camera : OVRCameraController;
 
   private var cameraRotationOffset : Quaternion;
 
@@ -23,7 +23,8 @@ private var currentTower : Tower;
 // functions
 var setupCameraRotations : Function;
 var switchToTower : Function;
-var switchToCamera : Function; var checkInput : Function; var rotateView : Function;
+var switchToCamera : Function; var toggleCameras : Function;
+var checkInput : Function; var rotateView : Function;
 
 function Start () {
   setupCameraRotations();
@@ -36,7 +37,7 @@ function Update () {
 
 checkInput = function(){
   if (Input.GetKeyDown("space")){
-    if (towers[0].camera.enabled){
+    if (currentTower == towers[0]){
       switchToTower(towers[1]);
     } else {
       switchToTower(towers[0]);
@@ -66,17 +67,19 @@ switchToTower = function (tower : Tower){
   currentTower = tower;
 };
 
-switchToCamera = function (camera : Camera, initOffset : Quaternion, towerObject : GameObject){
-  camera.enabled = true;
+switchToCamera = function (camera : OVRCameraController, initOffset : Quaternion, towerObject : GameObject){
+  // Enable both cameras
+  toggleCameras(camera, true);
   // set this camera's rotation such that it won't fuck up the kinect
+
   camera.transform.rotation = initOffset;
   camera.transform.RotateAround(towerObject.transform.position, Vector3.up, currentRotation);
   // disable the other camera's
   for (var i = 0; i < towers.length; i++){
-    var currCamera : Camera = towers[i].camera;
+    var currCamera : OVRCameraController = towers[i].camera;
     if (currCamera !== camera){
-      currCamera.GetComponent(AudioListener).enabled = false;
-      currCamera.enabled = false;
+      // disable both of its cameras
+      toggleCameras(currCamera, false);
     }
   }
 };
@@ -87,4 +90,14 @@ setupCameraRotations = function(){
     var currTower : Tower = towers[i];
     currTower.setCameraRotationOffset(currTower.camera.transform.rotation);
   }
+};
+
+// enables (or disables) the children cameras in this camera controller
+toggleCameras = function(camera : OVRCameraController, enable : boolean){
+  var cameras : Component[] = camera.gameObject.GetComponentsInChildren(Camera);
+  var cameraLeft : Camera   = cameras[0];
+  var cameraRight : Camera  = cameras[1];
+  cameraLeft.enabled  = enable;
+  cameraRight.enabled = enable;
+  cameraRight.GetComponent(AudioListener).enabled = enable;
 };
