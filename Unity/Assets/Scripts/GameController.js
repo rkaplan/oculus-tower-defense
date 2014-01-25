@@ -1,4 +1,5 @@
 ﻿#pragma strict
+
 class Tower{
   var TowerObject  : GameObject;
   var camera : OVRCameraController;
@@ -19,12 +20,14 @@ var towers: Tower[] = [
 var currentRotation : float = 0.0; // keep track of how far we've rotated
 
 private var currentTower : Tower;
+private var viewingTower : Tower;
 
 // functions
 var setupCameraRotations : Function;
-var switchToTower : Function;
+var switchToTower : Function; var checkLookingAt : Function;
 var switchToCamera : Function; var toggleCameras : Function;
-var checkInput : Function; var rotateView : Function;
+var highlightTower : Function; var unHighlightTower : Function;
+var checkInput : Function;
 
 function Start () {
   setupCameraRotations();
@@ -33,32 +36,39 @@ function Start () {
 
 function Update () {
   checkInput();
+  checkLookingAt();
 }
 
-checkInput = function(){
-  if (Input.GetKeyDown("space")){
-    if (currentTower == towers[0]){
-      switchToTower(towers[1]);
+checkLookingAt = function(){
+  var ray : Ray = currentTower.camera.GetComponentInChildren(Camera).ViewportPointToRay(Vector3(0.5,0.5,0));
+  var hit : RaycastHit;
+  Debug.DrawRay(ray.origin, ray.direction, Color.red);
+  if (Physics.Raycast(ray, hit)){
+    if (hit.transform.gameObject.tag == "Tower"){
+      // find the tower that we're hitting
+      for (var i = 0; i < towers.length; i++){
+        if (towers[i] !== currentTower && towers[i].TowerObject == hit.transform.gameObject){
+          viewingTower = towers[i];
+          break;
+        }
+      }
+      if (viewingTower){
+        highlightTower(viewingTower);
+      }
     } else {
-      switchToTower(towers[0]);
+      if (viewingTower){
+        unHighlightTower(viewingTower);
+        viewingTower = null;
+      }
     }
-  }
-
-  if (Input.GetKey("left")){
-    rotateView(true);
-  } else if (Input.GetKey("right")){
-    rotateView(false );
   }
 };
 
-rotateView = function(left : boolean){
-  var degrees : int = 20;
-  if (left){
-    degrees *= -1;
+checkInput = function(){
+  if (viewingTower && Input.GetKeyDown("space")){
+    switchToTower(viewingTower);
+    unHighlightTower(viewingTower);
   }
-  var rotateAmount = degrees * Time.deltaTime;
-  currentRotation = (currentRotation + rotateAmount) % 360;
-  currentTower.camera.transform.RotateAround(currentTower.TowerObject.transform.position, Vector3.up, rotateAmount);
 };
 
 switchToTower = function (tower : Tower){
@@ -100,4 +110,12 @@ toggleCameras = function(camera : OVRCameraController, enable : boolean){
   cameraLeft.enabled  = enable;
   cameraRight.enabled = enable;
   cameraRight.GetComponent(AudioListener).enabled = enable;
+};
+
+highlightTower = function(tower : Tower){
+  tower.TowerObject.renderer.material.color = Color.green;
+};
+
+unHighlightTower = function(tower: Tower){
+  tower.TowerObject.renderer.material.color = Color.grey;
 };
