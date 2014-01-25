@@ -23,6 +23,9 @@ var Laser_prefab : GameObject;
 private var currentTower : Tower;
 private var viewingTower : Tower;
 
+private var leftLaser : GameObject;
+private var rightLaser : GameObject;
+
 // functions
 var setupCameraRotations : Function;
 var switchToTower : Function; var checkLookingAt : Function; var checkRayTowerCollide : Function;
@@ -30,7 +33,8 @@ var switchToCamera : Function; var toggleCameras : Function;
 var highlightTower : Function; var unHighlightTower : Function;
 var checkInput : Function;
 // attacks
-var fireLaser : Function;
+var fireLaser : Function; var removeLaser : Function;
+var resetAttacks : Function;
 
 function Start () {
   setupCameraRotations();
@@ -42,19 +46,41 @@ function Update () {
   checkLookingAt();
 }
 
+removeLaser = function(left : boolean){
+  if (left && leftLaser){
+    Destroy(leftLaser);
+    leftLaser = null;
+  } else if (!left && rightLaser){
+    Destroy(rightLaser);
+    rightLaser = null;
+  }
+};
+
 fireLaser = function(dir : Vector3, left : boolean){
   var origin = currentTower.camera.gameObject.transform.position;
-  Debug.Log("Firing from " + origin);
   if (left){
     origin.x -= .5;
   } else {
     origin.x += .5;
   }
-  var laser : GameObject  = Instantiate(Laser_prefab, origin, Quaternion.identity);
-  var line : LineRenderer = laser.GetComponent(LineRenderer);
+  var currLaser : GameObject;
+  if (left && leftLaser){
+    currLaser = leftLaser;
+  } else if (!left && rightLaser){
+    currLaser = rightLaser;
+  }
+  if (!currLaser){
+    currLaser = Instantiate(Laser_prefab, origin, Quaternion.identity);
+  }
+  var line : LineRenderer = currLaser.GetComponent(LineRenderer);
   line.SetVertexCount(2);
   line.SetPosition(1, dir * 200);
   line.SetPosition(0, dir * -100);
+  if (left){
+    leftLaser = currLaser;
+  } else {
+    rightLaser = currLaser;
+  }
 };
 
 checkLookingAt = function(){
@@ -63,7 +89,7 @@ checkLookingAt = function(){
     var cameras : Component[]   = currentTower.camera.gameObject.GetComponentsInChildren(Camera);
     var cameraLeft : Camera     = cameras[0];
     var cameraRight : Camera    = cameras[1];
-    var ray : Ray            = cameraLeft.ViewportPointToRay(Vector3(0.5, i / 10,0));
+    var ray : Ray               = cameraLeft.ViewportPointToRay(Vector3(0.5, i / 10,0));
     if (checkRayTowerCollide(ray)){
       break;
     }
@@ -87,7 +113,6 @@ checkRayTowerCollide = function(ray : Ray){
         }
       }
       if (viewing){
-        Debug.Log("Hit");
         if (viewingTower){
           unHighlightTower(viewingTower);
         }
@@ -112,13 +137,18 @@ checkInput = function(){
   }
   if (Input.GetKeyDown("a")){
     fireLaser(Vector3(0.2, 0.2 * -1, 0.5), true);
+  } else if (Input.GetKeyUp("a")){
+    removeLaser(true);
   }
   if (Input.GetKeyDown("b")){
     fireLaser(Vector3(0.2, 0.2 * -1, 0.5), false);
+  } else if (Input.GetKeyUp("b")){
+    removeLaser(false);
   }
 };
 
 switchToTower = function (tower : Tower){
+  resetAttacks();
   var rotationDifference : Quaternion;
   if (currentTower){
     rotationDifference  = currentTower.camera.gameObject.transform.rotation *
@@ -130,6 +160,12 @@ switchToTower = function (tower : Tower){
   // switch to this tower's camera
   currentTower = tower;
   switchToCamera(tower.camera, tower.getCameraRotationOffset() * rotationDifference, tower.TowerObject);
+};
+
+// destroys all attacks
+resetAttacks = function(){
+  removeLaser(true);
+  removeLaser(false);
 };
 
 switchToCamera = function (camera : OVRCameraController, rotation : Quaternion, towerObject : GameObject){
