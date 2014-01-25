@@ -1,4 +1,5 @@
-﻿#pragma strict
+﻿// TODO: Point ray up for tower switching. Track Oculus movement so that we can change camera rotations accordingly
+#pragma strict
 
 class Tower{
   var TowerObject  : GameObject;
@@ -24,7 +25,7 @@ private var viewingTower : Tower;
 
 // functions
 var setupCameraRotations : Function;
-var switchToTower : Function; var checkLookingAt : Function;
+var switchToTower : Function; var checkLookingAt : Function; var checkRayTowerCollide : Function;
 var switchToCamera : Function; var toggleCameras : Function;
 var highlightTower : Function; var unHighlightTower : Function;
 var checkInput : Function;
@@ -40,20 +41,42 @@ function Update () {
 }
 
 checkLookingAt = function(){
-  var ray : Ray = currentTower.camera.GetComponentInChildren(Camera).ViewportPointToRay(Vector3(0.5,0.5,0));
+  for (var i : float = 0; i < 10; i++){
+    // shoot out a ray from both the left and right eye at this y value in the viewport
+    var cameras : Component[]   = currentTower.camera.GetComponentsInChildren(Camera);
+    var cameraLeft : Camera     = cameras[0];
+    var cameraRight : Camera    = cameras[1];
+    var ray : Ray            = cameraLeft.ViewportPointToRay(Vector3(0.5, i / 10,0));
+    if (checkRayTowerCollide(ray)){
+      break;
+    }
+    ray = cameraRight.ViewportPointToRay(Vector3(0.5, 1 / 10, 0));
+    if (checkRayTowerCollide(ray)){
+      break;
+    }
+  }
+};
+checkRayTowerCollide = function(ray : Ray){
+  Debug.DrawRay(ray.origin, ray.direction * 1000, Color.red);
   var hit : RaycastHit;
-  Debug.DrawRay(ray.origin, ray.direction, Color.red);
   if (Physics.Raycast(ray, hit)){
     if (hit.transform.gameObject.tag == "Tower"){
       // find the tower that we're hitting
-      for (var i = 0; i < towers.length; i++){
-        if (towers[i] !== currentTower && towers[i].TowerObject == hit.transform.gameObject){
-          viewingTower = towers[i];
+      var viewing : Tower  = null;
+      for (var j = 0; j < towers.length; j++){
+        if (towers[j] !== currentTower && towers[j].TowerObject == hit.transform.gameObject){
+          viewing = towers[j];
           break;
         }
       }
-      if (viewingTower){
+      if (viewing){
+        Debug.Log("Hit");
+        if (viewingTower){
+          unHighlightTower(viewingTower);
+        }
+        viewingTower = viewing;
         highlightTower(viewingTower);
+        return true;
       }
     } else {
       if (viewingTower){
@@ -62,19 +85,20 @@ checkLookingAt = function(){
       }
     }
   }
+  return false;
 };
 
 checkInput = function(){
   if (viewingTower && Input.GetKeyDown("space")){
-    switchToTower(viewingTower);
     unHighlightTower(viewingTower);
+    switchToTower(viewingTower);
   }
 };
 
 switchToTower = function (tower : Tower){
   // switch to this tower's camera
-  switchToCamera(tower.camera, tower.getCameraRotationOffset(), tower.TowerObject);
   currentTower = tower;
+  switchToCamera(tower.camera, tower.getCameraRotationOffset(), tower.TowerObject);
 };
 
 switchToCamera = function (camera : OVRCameraController, initOffset : Quaternion, towerObject : GameObject){
