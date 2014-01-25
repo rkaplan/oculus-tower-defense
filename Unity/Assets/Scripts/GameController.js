@@ -1,5 +1,4 @@
-﻿// TODO: Point ray up for tower switching. Track Oculus movement so that we can change camera rotations accordingly
-#pragma strict
+﻿#pragma strict
 
 class Tower{
   var TowerObject  : GameObject;
@@ -19,6 +18,7 @@ class Tower{
 var towers: Tower[] = [
 ];
 var currentRotation : float = 0.0; // keep track of how far we've rotated
+var Laser_prefab : GameObject;
 
 private var currentTower : Tower;
 private var viewingTower : Tower;
@@ -29,6 +29,8 @@ var switchToTower : Function; var checkLookingAt : Function; var checkRayTowerCo
 var switchToCamera : Function; var toggleCameras : Function;
 var highlightTower : Function; var unHighlightTower : Function;
 var checkInput : Function;
+// attacks
+var fireLaser : Function;
 
 function Start () {
   setupCameraRotations();
@@ -39,6 +41,21 @@ function Update () {
   checkInput();
   checkLookingAt();
 }
+
+fireLaser = function(dir : Vector3, left : boolean){
+  var origin = currentTower.TowerObject.gameObject.transform.position;
+  origin.y *= 2;
+  Debug.Log("Firing from " + origin);
+  if (left){
+    origin.x -= .5;
+  } else {
+    origin.x += .5;
+  }
+  var laser : GameObject  = Instantiate(Laser_prefab, origin, Quaternion.identity);
+  var line : LineRenderer = laser.GetComponent(LineRenderer);
+  line.SetVertexCount(2);
+  line.SetPosition(1, dir * 200);
+};
 
 checkLookingAt = function(){
   for (var i : float = 0; i < 10; i++){
@@ -92,6 +109,12 @@ checkInput = function(){
   if (viewingTower && Input.GetKeyDown("space")){
     unHighlightTower(viewingTower);
     switchToTower(viewingTower);
+  }
+  if (Input.GetKeyDown("a")){
+    fireLaser(Vector3(0.2, 0.2 * -1, 0.5), true);
+  }
+  if (Input.GetKeyDown("b")){
+    fireLaser(Vector3(0.2, 0.2 * -1, 0.5), false);
   }
 };
 
