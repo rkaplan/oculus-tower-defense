@@ -48,6 +48,7 @@
   <ItemGroup>
      <Compile Include="Assets\Scripts\CameraScript.js" />
      <Compile Include="Assets\Scripts\GameController.js" />
+     <Compile Include="Assets\Scripts\Kinect.js" />
      <None Include="Assets\Plugins\OVR\OVRImageEffects\OVRLensCorrection_CA.shader" />
      <None Include="Assets\Plugins\OVR\OVRImageEffects\OVRLensCorrection.shader" />
      <None Include="Assets\Plugins\OVR\Shaders\OVRGUIShader.shader" />

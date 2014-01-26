@@ -14,17 +14,31 @@ class Tower{
   }
 };
 
+class LaserInfo{
+  var point1 : Vector3;
+  var point2 : Vector3;
+
+  function LaserInfo(point1 : Vector3, point2 : Vector3){
+    this.point1 = point1;
+    this.point2 = point2;
+  }
+};
+
 // globals
 var towers: Tower[] = [
 ];
 var currentRotation : float = 0.0; // keep track of how far we've rotated
 var Laser_prefab : GameObject;
+var laserDamage : float;
 
 private var currentTower : Tower;
 private var viewingTower : Tower;
 
 private var leftLaser : GameObject;
 private var rightLaser : GameObject;
+
+private var leftLaser_info : LaserInfo  = null;
+private var rightLaser_info : LaserInfo = null;
 
 // functions
 var setupCameraRotations : Function;
@@ -33,7 +47,8 @@ var switchToCamera : Function; var toggleCameras : Function; var rotateCameras :
 var highlightTower : Function; var unHighlightTower : Function;
 var checkInput : Function;
 // attacks
-var fireLaser : Function; var removeLaser : Function;
+var fireLaser : Function; var removeLaser : Function; var checkLaserCollisions : Function;
+var checkLaserCollision : Function;
 var resetAttacks : Function;
 
 function Start () {
@@ -44,7 +59,30 @@ function Start () {
 function Update () {
   checkInput();
   checkLookingAt();
+  checkLaserCollisions();
 }
+
+checkLaserCollision = function(laserInfo : LaserInfo){
+  // perform a ray cast along the laser
+  var ray : Ray = Ray(laserInfo.point1, laserInfo.point2);
+  var hit : RaycastHit;
+  Debug.Log("Casting from " + ray.origin + " to " + ray.direction);
+  Debug.DrawRay(ray.origin, ray.direction, Color.green);
+  if (Physics.Raycast(ray, hit)){
+    if (hit.transform.gameObject.tag == "enemy"){
+      hit.transform.gameObject.GetComponent(EnemyScript).damage(laserDamage);
+    }
+  }
+};
+
+checkLaserCollisions = function(){
+  /*if (leftLaser){
+    checkLaserCollision(leftLaser_info);
+  }
+  if (rightLaser){
+    checkLaserCollision(rightLaser_info);
+  }*/
+};
 
 removeLaser = function(left : boolean){
   if (left && leftLaser){
@@ -56,11 +94,31 @@ removeLaser = function(left : boolean){
   }
 };
 
+// fires a laser. ONLY CALL IF THERE IS NO GIVEN LASER FROM THIS HAND YET!!!!!
 fireLaser = function(shoulder : Vector3, dir : Vector3, left : boolean){
   var rotationDifference : Quaternion;
+  rotationDifference   = currentTower.camera.gameObject.GetComponentInChildren(Camera).transform.rotation;
+  var origin : Vector3 = currentTower.camera.gameObject.transform.position;
+  var currLaser : GameObject;
+  var offsetVector : Vector3;
+  if (left){
+    //origin.x -= 0.5;
+    //offsetVector = rotationDifference * Vector3(-0.5, 0, 0);
+  } else if (!left){
+    //offsetVector = rotationDifference * Vector3(0.5, 0, 0);
+  }
+  origin += offsetVector;
+  currLaser = Instantiate(Laser_prefab, origin, rotationDifference);
+  if (left){
+    leftLaser = currLaser;
+  } else {
+    rightLaser = currLaser;
+  }
+};
+
+/*fireLaser = function(shoulder : Vector3, dir : Vector3, left : boolean){
+  var rotationDifference : Quaternion;
   rotationDifference  = currentTower.camera.gameObject.GetComponentInChildren(Camera).transform.rotation;
-  Debug.Log("Starting with " + currentTower.camera.gameObject.transform.rotation);
-  Debug.Log("Difference " + rotationDifference);
   var origin : Vector3 = currentTower.camera.gameObject.transform.position;
   var currLaser : GameObject;
   var offsetVector : Vector3;
@@ -88,10 +146,12 @@ fireLaser = function(shoulder : Vector3, dir : Vector3, left : boolean){
   line.SetPosition(0, dir * -100);
   if (left){
     leftLaser = currLaser;
+    leftLaser_info = LaserInfo((currLaser.transform.rotation) * (dir * 200), rotationDifference * (dir * -100));
   } else {
     rightLaser = currLaser;
+    rightLaser_info = LaserInfo((currLaser.transform.rotation) * (dir * 200), rotationDifference * (dir * -100));
   }
-};
+};*/
 
 checkLookingAt = function(){
   for (var i : float = 0; i < 10; i++){
@@ -110,7 +170,7 @@ checkLookingAt = function(){
   }
 };
 checkRayTowerCollide = function(ray : Ray){
-  Debug.DrawRay(ray.origin, ray.direction * 1000, Color.red);
+  //Debug.DrawRay(ray.origin, ray.direction * 1000, Color.red);
   var hit : RaycastHit;
   if (Physics.Raycast(ray, hit)){
     if (hit.transform.gameObject.tag == "Tower"){
@@ -146,13 +206,12 @@ checkInput = function(){
     unHighlightTower(viewingTower);
     switchToTower(viewingTower);
   }
-  if (Input.GetKeyDown("a")){
-    //fireLaser(Vector3(0.2, 0.2 * -1, 0.5), true);
+  if (Input.GetKeyDown("a") && !leftLaser){
     dir      = Vector3(0.2, -0.2, 0.5);
     shoulder = Vector3(0.5, 0, 0);
     fireLaser(shoulder, dir, true);
   } else if (Input.GetKeyUp("a")){
-    removeLaser(true);
+    //removeLaser(true);
   }
   if (Input.GetKeyDown("b")){
     dir      = Vector3(0.2, -0.2, 0.5);

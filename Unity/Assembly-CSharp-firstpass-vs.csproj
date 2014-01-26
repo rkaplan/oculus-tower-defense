@@ -46,6 +46,10 @@
 	</Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\Plugins\CS\scripts\EnemyScript.cs" />
+     <Compile Include="Assets\Plugins\CS\scripts\MapLayout.cs" />
+     <Compile Include="Assets\Plugins\CS\scripts\SpawnerScript.cs" />
+     <Compile Include="Assets\Plugins\CS\scripts\TowerScript.cs" />
      <Compile Include="Assets\Plugins\OVR\Editor\OVRBuild.cs" />
      <Compile Include="Assets\Plugins\OVR\Editor\OVRCameraControllerEditor.cs" />
      <Compile Include="Assets\Plugins\OVR\Editor\OVRDeviceEditor.cs" />
