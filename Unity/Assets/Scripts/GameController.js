@@ -29,7 +29,7 @@ private var rightLaser : GameObject;
 // functions
 var setupCameraRotations : Function;
 var switchToTower : Function; var checkLookingAt : Function; var checkRayTowerCollide : Function;
-var switchToCamera : Function; var toggleCameras : Function;
+var switchToCamera : Function; var toggleCameras : Function; var rotateCameras : Function;
 var highlightTower : Function; var unHighlightTower : Function;
 var checkInput : Function;
 // attacks
@@ -56,22 +56,32 @@ removeLaser = function(left : boolean){
   }
 };
 
-fireLaser = function(dir : Vector3, left : boolean){
-  var origin = currentTower.camera.gameObject.transform.position;
-  if (left){
-    origin.x -= .5;
-  } else {
-    origin.x += .5;
-  }
+fireLaser = function(shoulder : Vector3, dir : Vector3, left : boolean){
+  var rotationDifference : Quaternion;
+  rotationDifference  = currentTower.camera.gameObject.GetComponentInChildren(Camera).transform.rotation;
+  Debug.Log("Starting with " + currentTower.camera.gameObject.transform.rotation);
+  Debug.Log("Difference " + rotationDifference);
+  var origin : Vector3 = currentTower.camera.gameObject.transform.position;
   var currLaser : GameObject;
-  if (left && leftLaser){
-    currLaser = leftLaser;
-  } else if (!left && rightLaser){
-    currLaser = rightLaser;
+  var offsetVector : Vector3;
+  if (left){
+    if (leftLaser){
+      currLaser = leftLaser;
+    }
+    //origin.x -= 0.5;
+    offsetVector = rotationDifference * Vector3(-0.5, 0, 0);
+  } else if (!left){
+    if (rightLaser){
+      currLaser = rightLaser;
+    }
+    offsetVector = rotationDifference * Vector3(0.5, 0, 0);
   }
+  origin += offsetVector;
   if (!currLaser){
     currLaser = Instantiate(Laser_prefab, origin, Quaternion.identity);
   }
+  origin                       = rotationDifference * origin;
+  currLaser.transform.rotation = currLaser.transform.rotation * rotationDifference;
   var line : LineRenderer = currLaser.GetComponent(LineRenderer);
   line.SetVertexCount(2);
   line.SetPosition(1, dir * 200);
@@ -131,19 +141,30 @@ checkRayTowerCollide = function(ray : Ray){
 };
 
 checkInput = function(){
+  var dir : Vector3; var shoulder : Vector3;
   if (viewingTower && Input.GetKeyDown("space")){
     unHighlightTower(viewingTower);
     switchToTower(viewingTower);
   }
   if (Input.GetKeyDown("a")){
-    fireLaser(Vector3(0.2, 0.2 * -1, 0.5), true);
+    //fireLaser(Vector3(0.2, 0.2 * -1, 0.5), true);
+    dir      = Vector3(0.2, -0.2, 0.5);
+    shoulder = Vector3(0.5, 0, 0);
+    fireLaser(shoulder, dir, true);
   } else if (Input.GetKeyUp("a")){
     removeLaser(true);
   }
   if (Input.GetKeyDown("b")){
-    fireLaser(Vector3(0.2, 0.2 * -1, 0.5), false);
+    dir      = Vector3(0.2, -0.2, 0.5);
+    shoulder = Vector3(0.5, 0, 0);
+    fireLaser(shoulder, dir, false);
   } else if (Input.GetKeyUp("b")){
     removeLaser(false);
+  }
+  if (Input.GetKey("left")){
+    rotateCameras(true);
+  } else if (Input.GetKey("right")){
+    rotateCameras(false);
   }
 };
 
@@ -208,4 +229,22 @@ highlightTower = function(tower : Tower){
 
 unHighlightTower = function(tower: Tower){
   tower.TowerObject.renderer.material.color = Color.grey;
+};
+
+// helper function for moving the world with no rift
+rotateCameras = function(left : boolean){
+  Debug.Log("Turning");
+  var cameras : Component[] = currentTower.camera.gameObject.GetComponentsInChildren(Camera);
+  var cameraLeft : Camera   = cameras[0];
+  var cameraRight : Camera  = cameras[1];
+  var degrees : float = 40;
+  if (left){
+    degrees *= -1;
+  }
+  var angle : Vector3 = Vector3.up;
+  cameraLeft.gameObject.transform.RotateAround(currentTower.TowerObject.transform.position, Vector3.up, degrees * Time.deltaTime);
+  cameraRight.gameObject.transform.RotateAround(currentTower.TowerObject.transform.position, Vector3.up, degrees * Time.deltaTime);
+  //currentTower.camera.gameObject.transform.Rotate(Vector3.up, degrees);
+  /*cameraLeft.gameObject.transform.Rotate(Vector3.up, degrees * Time.deltaTime);
+  cameraRight.gameObject.transform.Rotate(Vector3.up, degrees * Time.deltaTime);*/
 };

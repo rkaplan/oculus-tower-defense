@@ -67,6 +67,8 @@
      <Compile Include="Assets\Plugins\OVR\Scripts\OVRPlayerController.cs" />
      <Compile Include="Assets\Plugins\OVR\Scripts\OVRPresetManager.cs" />
      <Compile Include="Assets\Plugins\OVR\Scripts\OVRUtils.cs" />
+     <Compile Include="Assets\Plugins\radical\System\Curves.cs" />
+     <Compile Include="Assets\Plugins\radical\System\Easing.cs" />
      <None Include="Assets\Plugins\OVR\OVRImageEffects\OVRLensCorrection_CA.shader" />
      <None Include="Assets\Plugins\OVR\OVRImageEffects\OVRLensCorrection.shader" />
      <None Include="Assets\Plugins\OVR\Shaders\OVRGUIShader.shader" />
